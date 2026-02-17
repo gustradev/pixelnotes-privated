@@ -32,11 +32,11 @@ RUN useradd --create-home --shell /bin/bash appuser && \
 USER appuser
 
 # Expose port
-EXPOSE 94838
+EXPOSE 58438
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:94838/health || exit 1
+    CMD curl -f http://localhost:58438/health || exit 1
 
 # Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "94838"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "58438"]

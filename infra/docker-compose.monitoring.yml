@@ -1,0 +1,22 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: pixelnotes-prometheus
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - pixelnotes-internal
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    container_name: pixelnotes-grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - pixelnotes-internal
+    restart: unless-stopped

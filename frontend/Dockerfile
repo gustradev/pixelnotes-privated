@@ -23,7 +23,7 @@ RUN flutter pub get
 COPY . .
 
 # Build web
-RUN flutter build web --release --web-port 94837
+RUN flutter build web --release
 
 # Production stage with nginx
 FROM nginx:alpine
@@ -35,7 +35,7 @@ COPY --from=build /app/build/web /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
-EXPOSE 94838
+EXPOSE 58437
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

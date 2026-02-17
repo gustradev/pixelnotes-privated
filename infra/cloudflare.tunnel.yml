@@ -1,0 +1,9 @@
+tunnel: ${CF_TUNNEL_ID}
+credentials-file: ${CF_CREDENTIALS_FILE}
+
+ingress:
+  - hostname: ${CF_HOST_NOTE}
+    service: http://frontend:${FRONTEND_PORT}
+  - hostname: ${CF_HOST_API}
+    service: http://backend:${BACKEND_PORT}
+  - service: http_status:404

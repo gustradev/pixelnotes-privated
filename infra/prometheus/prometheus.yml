@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: pixelnotes-backend-health
+    metrics_path: /health
+    static_configs:
+      - targets: ["backend:58438"]
+  - job_name: face-gpu-health
+    metrics_path: /health
+    static_configs:
+      - targets: ["face-gpu-service:8091"]

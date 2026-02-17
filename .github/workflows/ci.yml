@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Run backend tests
+        env:
+          SECRET_ENTRY_PASSWORD: test-entry
+          SECRET_USER_1: user_alpha
+          SECRET_PASS_1: $2b$12$w6Qm8qHdzvkn8jc9Y7sRl.Z7So4ZYYMVeMccza8R7QhZQvVwPuE4K
+          SECRET_USER_2: user_beta
+          SECRET_PASS_2: $2b$12$w6Qm8qHdzvkn8jc9Y7sRl.Z7So4ZYYMVeMccza8R7QhZQvVwPuE4K
+          JWT_SECRET: test-jwt-secret-test-jwt-secret-test-jwt-secret
+          ENCRYPTION_KEY: test-encryption-key-test-encryption-key
+        run: |
+          PYTHONPATH=. pytest ../tests/backend -q
+
+  flutter-analyze:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Flutter pub get
+        run: flutter pub get
+      - name: Flutter analyze
+        run: flutter analyze

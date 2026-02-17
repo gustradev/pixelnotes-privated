@@ -1,0 +1,15 @@
+services:
+  frontend:
+    restart: unless-stopped
+
+  backend:
+    restart: unless-stopped
+
+  redis:
+    restart: unless-stopped
+
+  cloudflared:
+    restart: unless-stopped
+
+  face-gpu-service:
+    restart: unless-stopped

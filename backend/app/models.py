@@ -81,6 +81,26 @@ class ClearChatResponse(BaseModel):
     cleared_count: int
 
 
+class FlushChatResponse(BaseModel):
+    """Response model for remote flush chat"""
+    success: bool
+    event_id: str
+    cleared_count: int
+    timestamp: int
+
+
+class WebSocketEvent(BaseModel):
+    """Model for WebSocket events"""
+    type: str  # "event", "flush", "ping", "pong"
+    event_id: Optional[str] = None
+    nonce: Optional[str] = None
+    timestamp: Optional[int] = None
+    checksum: Optional[str] = None
+    signature: Optional[str] = None
+    signal_type: Optional[str] = None
+    message_id: Optional[str] = None
+
+
 # ===========================================
 # NOTES MODELS (Surface App)
 # ===========================================

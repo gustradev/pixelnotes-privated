@@ -1,0 +1,8 @@
+tunnel: 6c38433f-575b-459a-8495-041c37f1d702
+credentials-file: /home/gustradev/.cloudflared/6c38433f-575b-459a-8495-041c37f1d702.json
+origincert: /home/gustradev/.cloudflared/cert.pem
+
+ingress:
+  - hostname: api94837.pixelsolusindo.space
+    service: http://localhost:58438
+  - service: http_status:404

@@ -2,7 +2,7 @@
 Pixel Notes Backend - Authentication Routes
 Handles secret entry and user login
 """
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -100,7 +100,7 @@ async def login(
     summary="Verify JWT token",
     description="Verify if the current JWT token is valid",
 )
-async def verify_token(username: str = get_current_user):
+async def verify_token(username: str = Depends(get_current_user)):
     """
     Verify the current JWT token.
     

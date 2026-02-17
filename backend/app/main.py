@@ -15,7 +15,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.redis_client import redis_client
-from app.routes import auth, chat, notes
+from app.routes import auth, chat, notes, websocket, face
 
 
 # Configure logging
@@ -118,6 +118,8 @@ async def log_requests(request: Request, call_next):
 app.include_router(auth.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(notes.router, prefix="/api")
+app.include_router(face.router, prefix="/api")
+app.include_router(websocket.router)
 
 
 # ===========================================

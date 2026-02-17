@@ -1,3 +1,42 @@
-// filepath: /home/gustradev/www/pixelnotes/documents/notes
-flutter devices
-flutter run -d emulator-5554
+# Pixel Notes Notes
+
+## Daily Commands
+- `flutter devices`
+- `flutter run -d emulator-5554`
+- `cd frontend && flutter analyze`
+- `cd backend && PYTHONPATH=. /home/gustradev/www/pixelnotes/.venv/bin/python -m pytest ../tests/backend -q`
+
+## Deploy Commands
+- `./scripts/deploy.sh dev`
+- `./scripts/deploy.sh staging`
+- `./scripts/deploy.sh prod`
+
+## Tunnel API (Named Cloudflare)
+- API publik: `https://api94837.pixelsolusindo.space`
+- Health check: `curl https://api94837.pixelsolusindo.space/health`
+- Tunnel config file: `infra/cloudflared.pixelnotes-api.docker.yml`
+- Jalankan tunnel:
+  - `docker rm -f pixelnotes-api-tunnel >/dev/null 2>&1 || true`
+  - `docker run -d --name pixelnotes-api-tunnel --user 0 --network host -v /home/gustradev/www/pixelnotes/infra/cloudflared.pixelnotes-api.docker.yml:/etc/cloudflared/config.yml:ro -v /home/gustradev/.cloudflared:/home/nonroot/.cloudflared:ro cloudflare/cloudflared:latest tunnel --no-autoupdate --config /etc/cloudflared/config.yml run`
+
+## Monitoring
+- `docker compose -f docker-compose.yml -f infra/docker-compose.monitoring.yml up -d`
+
+## Reminder
+- Rotate all secrets in `credential.env` sebelum produksi publik.
+
+## Secret User Credentials
+- Password simbol (entry gate): `pixelentry2026`
+- `SECRET_USER_1=user_alpha`
+- `SECRET_USER_2=user_beta`
+- Login test:
+  - `user_alpha` -> `<set_local_password>`
+  - `user_beta` -> `<set_local_password>`
+- Password plaintext tidak tersimpan di repo (yang disimpan adalah bcrypt hash di `SECRET_PASS_1` dan `SECRET_PASS_2`).
+
+## Set Password User (Generate Hash)
+- `python scripts/enroll_user.py --username user_alpha --password "<password_baru>"`
+- `python scripts/enroll_user.py --username user_beta --password "<password_baru>"`
+- Copy nilai `HASH=` hasil command ke:
+  - `SECRET_PASS_1` (untuk `user_alpha`)
+  - `SECRET_PASS_2` (untuk `user_beta`)

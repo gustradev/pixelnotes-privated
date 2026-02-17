@@ -157,8 +157,15 @@ async def get_current_user(
             status_code=401,
             detail="Invalid or expired token"
         )
-    
-    return payload.get("sub")
+
+    username = payload.get("sub")
+    if not username:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token payload"
+        )
+
+    return username
 
 
 async def get_optional_user(

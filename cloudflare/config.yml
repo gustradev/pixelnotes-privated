@@ -8,11 +8,11 @@ credentials-file: /etc/cloudflared/credentials.json
 ingress:
   # Frontend - Notes app
   - hostname: note.pixelsolusindo.space
-    service: http://frontend:94837
+    service: http://frontend:58437
     
   # Backend - API
   - hostname: api94837.pixelsolusindo.space
-    service: http://backend:94838
+    service: http://backend:58438
     
   # Catch-all - return 404 for unmatched requests
   - service: http_status:404

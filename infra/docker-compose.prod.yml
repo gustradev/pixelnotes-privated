@@ -1,0 +1,28 @@
+services:
+  frontend:
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    command: >
+      redis-server
+      --appendonly no
+      --maxmemory-policy allkeys-lru
+      --maxmemory 256mb
+      --save ""
+      --protected-mode yes
+
+  face-gpu-service:
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  cloudflared:
+    security_opt:
+      - no-new-privileges:true

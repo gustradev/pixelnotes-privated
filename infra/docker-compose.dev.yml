@@ -1,0 +1,18 @@
+services:
+  frontend:
+    ports:
+      - "58437:58437"
+
+  backend:
+    ports:
+      - "58438:58438"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  cloudflared:
+    profiles: ["disabled"]
+
+  face-gpu-service:
+    deploy: {}
