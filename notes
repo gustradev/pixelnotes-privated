@@ -1,0 +1,3 @@
+// filepath: /home/gustradev/www/pixelnotes/documents/notes
+flutter devices
+flutter run -d emulator-5554

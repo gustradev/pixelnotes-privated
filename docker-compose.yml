@@ -1,0 +1,117 @@
+version: '3.9'
+
+services:
+  # ===========================================
+  # FRONTEND - Flutter Web (Port 94837)
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pixelnotes-frontend
+    ports:
+      - "94837:94837"
+    environment:
+      - API_BASE_URL=${API_BASE_URL}
+    networks:
+      - pixelnotes-internal
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:94837"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===========================================
+  # BACKEND - FastAPI (Port 94838)
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pixelnotes-backend
+    ports:
+      - "94838:94838"
+    environment:
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - BACKEND_PORT=${BACKEND_PORT}
+      - SECRET_ENTRY_PASSWORD=${SECRET_ENTRY_PASSWORD}
+      - SECRET_USER_1=${SECRET_USER_1}
+      - SECRET_PASS_1=${SECRET_PASS_1}
+      - SECRET_USER_2=${SECRET_USER_2}
+      - SECRET_PASS_2=${SECRET_PASS_2}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_TTL_SECONDS=${REDIS_TTL_SECONDS}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY_HOURS=${JWT_EXPIRY_HOURS}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    networks:
+      - pixelnotes-internal
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:94838/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ===========================================
+  # REDIS - Ephemeral Storage (Internal Only)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: pixelnotes-redis
+    command: >
+      redis-server
+      --appendonly no
+      --maxmemory-policy allkeys-lru
+      --maxmemory 256mb
+      --save ""
+    networks:
+      - pixelnotes-internal
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===========================================
+  # CLOUDFLARE TUNNEL
+  # ===========================================
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pixelnotes-cloudflared
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+    networks:
+      - pixelnotes-internal
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+# ===========================================
+# NETWORKS - Internal Only
+# ===========================================
+networks:
+  pixelnotes-internal:
+    driver: bridge
+    internal: false
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  redis-data:
+    driver: local

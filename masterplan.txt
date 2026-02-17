@@ -1,0 +1,277 @@
+// filepath: /home/gustradev/www/pixelnotes/documents/masterplan.txt
+PROJECT NAME:
+
+VERSION:
+v0.1-ALPHA
+
+OWNER:
+Pixel Solusindo
+
+ARCHITECTURE STYLE:
+Self-Hosted
+Tunnel-Only
+Ephemeral Messaging (TTL-based)
+.env-driven secret authentication
+Zero Public IP Exposure
+
+=========================================================
+1. PRODUCT OVERVIEW
+=========================================================
+
+Pixel Notes adalah aplikasi Notes sederhana (branding depan),
+dengan fitur tersembunyi "Secret Chat Mode".
+
+Default Behavior:
+- User melihat aplikasi seperti Notes app biasa.
+- Bisa create, edit, delete notes (optional storage Redis TTL).
+
+Hidden Behavior:
+- Di Settings terdapat symbol rahasia (misal: ⟁ atau ◉ atau ∆).
+- Ketika symbol ditekan:
+  - Muncul password prompt.
+  - Jika password benar → masuk ke Secret Chat Room.
+  - Jika salah → tidak ada feedback eksplisit.
+
+Secret Chat:
+- Hanya 2 akun statis.
+- Account disimpan di .env.
+- Tidak disimpan di database.
+- Semua chat ephemeral.
+- TTL Redis: 24 jam (1x24 jam).
+- Setelah 24 jam auto-delete.
+
+=========================================================
+2. SYSTEM ARCHITECTURE
+=========================================================
+
+Frontend:
+Flutter (Web build)
+Running on:
+Port 94837
+
+Backend:
+FastAPI (Python)
+Running on:
+Port 94838
+
+Database:
+Redis (Dockerized)
+TTL enforced per message key
+
+Tunnel:
+Cloudflare Tunnel
+- note.pixelsolusindo.space → 94837
+- api94837.pixelsolusindo.space → 94838
+
+NO PUBLIC IP
+NO PORT FORWARDING
+
+=========================================================
+3. INFRASTRUCTURE DESIGN
+=========================================================
+
+Docker Compose Services:
+
+- frontend
+- backend
+- redis
+- cloudflared
+
+Network:
+Internal Docker network only
+
+Redis Config:
+appendonly no
+maxmemory-policy allkeys-lru
+TTL per key: 86400 seconds
+
+=========================================================
+4. ENV STRUCTURE (.env)
+=========================================================
+
+# FRONTEND
+FRONTEND_PORT=94837
+API_BASE_URL=https://api94837.pixelsolusindo.space
+
+# BACKEND
+BACKEND_PORT=94838
+SECRET_ENTRY_PASSWORD=your_hidden_entry_password
+
+# SECRET CHAT USERS
+SECRET_USER_1=usernameA
+SECRET_PASS_1=hashed_passwordA
+
+SECRET_USER_2=usernameB
+SECRET_PASS_2=hashed_passwordB
+
+# REDIS
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_TTL_SECONDS=86400
+
+# CLOUDFLARE
+CF_TUNNEL_ID=
+CF_CREDENTIALS_FILE=
+CF_HOST_NOTE=note.pixelsolusindo.space
+CF_HOST_API=api94837.pixelsolusindo.space
+
+=========================================================
+5. AUTHENTICATION LOGIC
+=========================================================
+
+5.1 Secret Entry
+- User tap symbol
+- Prompt password
+- Compare with SECRET_ENTRY_PASSWORD (.env)
+- If correct → show login form
+- If incorrect → do nothing / return generic error
+
+5.2 Secret Chat Login
+- Username + password
+- Compare against .env users
+- Password hashed (bcrypt)
+- On success → issue JWT (short expiry 2h)
+
+=========================================================
+6. REDIS DATA STRUCTURE
+=========================================================
+
+Chat Storage Model:
+
+Key:
+chat:room:global
+
+Value:
+List of JSON messages
+
+Each message structure:
+{
+  "id": uuid,
+  "from": username,
+  "message": encrypted_text,
+  "timestamp": unix_epoch
+}
+
+TTL:
+Set TTL on key to 86400 seconds
+Redis auto deletes after expiration.
+
+Optional:
+Use Redis Streams instead of List (recommended for scalability)
+
+=========================================================
+7. ENCRYPTION MODEL (RECOMMENDED)
+=========================================================
+
+Client-side encryption (AES-256-GCM)
+Key derived from:
+
+SHA256(SECRET_ENTRY_PASSWORD + static_salt)
+
+Server never stores plaintext.
+
+=========================================================
+8. API ENDPOINTS
+=========================================================
+
+POST /auth/entry
+POST /auth/login
+GET  /chat/messages
+POST /chat/send
+DELETE /chat/clear
+
+All endpoints:
+Require JWT
+Rate limit enabled
+
+=========================================================
+9. SECURITY MODEL
+=========================================================
+
+- No open IP
+- Only Cloudflare Tunnel exposure
+- CORS restricted to note.pixelsolusindo.space
+- JWT expiry short-lived
+- Redis only internal network
+- Fail2ban optional
+- UFW deny all except docker internal
+
+=========================================================
+10. FLUTTER FRONTEND STRUCTURE
+=========================================================
+
+lib/
+ ├── main.dart
+ ├── pages/
+ │    ├── notes_page.dart
+ │    ├── settings_page.dart
+ │    ├── secret_login_page.dart
+ │    ├── secret_chat_page.dart
+ ├── services/
+ │    ├── api_service.dart
+ │    ├── encryption_service.dart
+ │    ├── auth_service.dart
+
+UI Philosophy:
+Minimal
+No obvious "chat app" indicator
+Neutral color
+Soft, clean, professional
+
+=========================================================
+11. CLOUDLFARE TUNNEL CONFIG
+=========================================================
+
+config.yml
+
+tunnel: pixeltunnel-notes
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: note.pixelsolusindo.space
+    service: http://frontend:94837
+  - hostname: api94837.pixelsolusindo.space
+    service: http://backend:94838
+  - service: http_status:404
+
+=========================================================
+12. DEPLOYMENT FLOW
+=========================================================
+
+1. Copy project to server
+2. Copy .env
+3. docker compose up -d
+4. Cloudflare tunnel auto start
+5. Test endpoints
+6. Validate TLS
+
+=========================================================
+13. HARDENING CHECKLIST
+=========================================================
+
+[ ] Redis protected by internal network only
+[ ] Backend not accessible publicly
+[ ] JWT secret rotated
+[ ] Entry password strong
+[ ] Cloudflare Zero Trust enabled
+[ ] Bot protection enabled
+[ ] Rate limiting active
+[ ] Logs sanitized
+
+=========================================================
+14. FUTURE ROADMAP
+=========================================================
+
+Phase 2:
+- Self destruct timer per message
+- Per message TTL
+- Secret image sending
+- Device binding
+
+Phase 3:
+- Full peer-to-peer WebRTC
+- No server storage
+- Perfect Forward Secrecy
+
+=========================================================
+END OF MASTERPLAN

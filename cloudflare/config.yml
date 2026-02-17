@@ -1,0 +1,23 @@
+# Cloudflare Tunnel Configuration
+# Pixel Notes - Secret Chat Mode
+
+tunnel: ${CF_TUNNEL_ID}
+credentials-file: /etc/cloudflared/credentials.json
+
+# Ingress rules - route traffic to appropriate services
+ingress:
+  # Frontend - Notes app
+  - hostname: note.pixelsolusindo.space
+    service: http://frontend:94837
+    
+  # Backend - API
+  - hostname: api94837.pixelsolusindo.space
+    service: http://backend:94838
+    
+  # Catch-all - return 404 for unmatched requests
+  - service: http_status:404
+
+# Logging configuration
+logging:
+  level: info
+  format: json
