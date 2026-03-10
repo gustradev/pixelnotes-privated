@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     frontend_port: int = 58437
     backend_port: int = 58438
     
-    # Secret Entry Password
-    secret_entry_password: str
+    # Secret Entry Password (REMOVED)
+    # secret_entry_password: str
     
     # Secret Chat Users (from .env)
     secret_user_1: str

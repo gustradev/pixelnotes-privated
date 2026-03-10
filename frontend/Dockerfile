@@ -22,8 +22,11 @@ RUN flutter pub get
 # Copy source code
 COPY . .
 
+# Build-time API URL for Flutter web
+ARG API_BASE_URL=http://localhost:58438
+
 # Build web
-RUN flutter build web --release
+RUN flutter build web --release --dart-define=API_BASE_URL=${API_BASE_URL}
 
 # Production stage with nginx
 FROM nginx:alpine

@@ -4,13 +4,18 @@ Realtime stealth notification endpoints
 """
 import asyncio
 import json
+import uuid
+from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from typing import Optional
+from typing import Dict
 
 from app.websocket_manager import ws_manager
 from app.auth import AuthHandler
 
 router = APIRouter(tags=["WebSocket"])
+_call_rooms: Dict[str, Dict[str, WebSocket]] = {}
+_call_conn_meta: Dict[str, tuple[str, str]] = {}
+_call_lock = asyncio.Lock()
 
 
 @router.websocket("/ws/notifications")
@@ -177,3 +182,124 @@ async def websocket_chat(
     finally:
         heartbeat_task.cancel()
         await ws_manager.disconnect(connection_id, username)
+
+
+@router.websocket("/ws/call")
+async def websocket_call_signaling(
+    websocket: WebSocket,
+    token: str = Query(...),
+    room: str = Query("global"),
+):
+    """
+    WebRTC signaling WebSocket endpoint.
+
+    Message format from client:
+    {
+      "type": "call-invite|offer|answer|ice-candidate|call-end|call-decline|call-busy|ping",
+      "data": { ... }
+    }
+
+    Server relays signaling packets to other peers in the same room.
+    """
+    payload = AuthHandler.decode_token(token)
+    if payload is None:
+        await websocket.close(code=4001, reason="Invalid token")
+        return
+
+    username = payload.get("sub")
+    if not username:
+        await websocket.close(code=4001, reason="Invalid token payload")
+        return
+
+    await websocket.accept()
+    conn_id = str(uuid.uuid4())
+
+    async with _call_lock:
+        if room not in _call_rooms:
+            _call_rooms[room] = {}
+        _call_rooms[room][conn_id] = websocket
+        _call_conn_meta[conn_id] = (room, username)
+
+    await _call_broadcast(
+        room,
+        {
+            "type": "participant-joined",
+            "from": username,
+            "room": room,
+            "timestamp": int(datetime.utcnow().timestamp()),
+            "data": {},
+        },
+        exclude_conn=conn_id,
+    )
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                message = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+
+            msg_type = message.get("type")
+            if msg_type == "ping":
+                await websocket.send_json({"type": "pong"})
+                continue
+
+            envelope = {
+                "type": msg_type,
+                "from": username,
+                "room": room,
+                "timestamp": int(datetime.utcnow().timestamp()),
+                "data": message.get("data", {}),
+            }
+
+            await _call_broadcast(room, envelope, exclude_conn=conn_id)
+
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await _remove_call_connection(conn_id)
+
+
+async def _call_broadcast(room: str, payload: dict, exclude_conn: str | None = None):
+    async with _call_lock:
+        connections = list(_call_rooms.get(room, {}).items())
+
+    stale_conn_ids = []
+    for conn_id, ws in connections:
+        if exclude_conn and conn_id == exclude_conn:
+            continue
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            stale_conn_ids.append(conn_id)
+
+    for stale in stale_conn_ids:
+        await _remove_call_connection(stale)
+
+
+async def _remove_call_connection(conn_id: str):
+    room = None
+    username = None
+
+    async with _call_lock:
+        meta = _call_conn_meta.pop(conn_id, None)
+        if meta:
+            room, username = meta
+            room_map = _call_rooms.get(room, {})
+            room_map.pop(conn_id, None)
+            if not room_map and room in _call_rooms:
+                del _call_rooms[room]
+
+    if room and username:
+        await _call_broadcast(
+            room,
+            {
+                "type": "participant-left",
+                "from": username,
+                "room": room,
+                "timestamp": int(datetime.utcnow().timestamp()),
+                "data": {},
+            },
+            exclude_conn=conn_id,
+        )

@@ -6,7 +6,7 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.config import settings
@@ -95,18 +95,7 @@ class AuthHandler:
         except jwt.InvalidTokenError:
             return None
     
-    @staticmethod
-    def validate_entry_password(password: str) -> bool:
-        """
-        Validate the secret entry password.
-        
-        Args:
-            password: Password to validate
-            
-        Returns:
-            bool: True if valid
-        """
-        return password == settings.secret_entry_password
+    # validate_entry_password REMOVED
     
     @staticmethod
     def validate_user(username: str, password: str) -> Tuple[bool, Optional[str]]:
@@ -135,7 +124,7 @@ class AuthHandler:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = security
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> str:
     """
     FastAPI dependency to get current authenticated user.

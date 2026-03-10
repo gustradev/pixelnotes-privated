@@ -7,8 +7,6 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.models import (
-    EntryPasswordRequest,
-    EntryPasswordResponse,
     LoginRequest,
     LoginResponse,
     ErrorResponse,
@@ -21,35 +19,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.post(
-    "/entry",
-    response_model=EntryPasswordResponse,
-    responses={
-        200: {"model": EntryPasswordResponse},
-        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
-    },
-    summary="Validate secret entry password",
-    description="Validates the secret entry password to access hidden chat mode",
-)
-@limiter.limit("5/minute")
-async def validate_entry_password(
-    request: Request,
-    body: EntryPasswordRequest,
-):
-    """
-    Validate the secret entry password.
-    
-    - Returns valid=True if password matches
-    - Returns valid=False with no error message if incorrect (security)
-    - Rate limited to 5 attempts per minute
-    """
-    is_valid = AuthHandler.validate_entry_password(body.password)
-    
-    if is_valid:
-        return EntryPasswordResponse(valid=True, message="Access granted")
-    
-    # No explicit error for security - silent failure
-    return EntryPasswordResponse(valid=False)
+
 
 
 @router.post(

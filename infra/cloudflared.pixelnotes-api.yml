@@ -3,6 +3,8 @@ credentials-file: /home/gustradev/.cloudflared/6c38433f-575b-459a-8495-041c37f1d
 origincert: /home/gustradev/.cloudflared/cert.pem
 
 ingress:
+  - hostname: notes.pixelsolusindo.space
+    service: http://localhost:58437
   - hostname: api94837.pixelsolusindo.space
     service: http://localhost:58438
   - service: http_status:404

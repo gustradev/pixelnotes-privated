@@ -11,15 +11,7 @@ from datetime import datetime
 # AUTH MODELS
 # ===========================================
 
-class EntryPasswordRequest(BaseModel):
-    """Request model for secret entry password validation"""
-    password: str = Field(..., min_length=1)
 
-
-class EntryPasswordResponse(BaseModel):
-    """Response model for secret entry password validation"""
-    valid: bool
-    message: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

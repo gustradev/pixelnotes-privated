@@ -1,0 +1,13 @@
+Backend (from project root):
+``
+source .venv/bin/activate
+cd backend
+export $(grep -v '^#' ../credential.env | xargs)  # Load environment variables if needed
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+
+
+Frontend (from project root):
+``
+cd frontend
+flutter run -d web-server --web-port=8082
